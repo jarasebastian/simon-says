@@ -8,20 +8,23 @@ const violet = document.getElementById('violet')
 const orange = document.getElementById('orange')
 const green = document.getElementById('green')
 const startButton = document.getElementById('startButton')
+const LAST_LEVEL = 5
 
 // The main game class is declared
 class Game {
 
     constructor() {
+        this.initialize = this.initialize.bind(this)
         this.initialize()
         this.generateSecuence()
-        this.nextLevel()
+        setTimeout(this.nextLevel, 500)
     }
 
     // This method initiates or reset the values using during the game
     initialize() {
+        this.nextLevel = this.nextLevel.bind(this)
         this.choiceColor = this.choiceColor.bind(this)
-        startButton.classList.add('hide')
+        this.toggleStartButton()
         this.level = 1
         this.colors = {
             lightBlue,
@@ -31,12 +34,23 @@ class Game {
         }
     }
 
+    // Show or hide the start button
+    toggleStartButton() {
+        if (startButton.classList.contains('hide')) {
+            startButton.classList.remove('hide')
+        } else {
+            startButton.classList.add('hide')
+        }
+      }
+
     // Method which generates the initial secuence for the game 
     generateSecuence() {
-        this.secuence = new Array(10).fill(0).map(n => Math.floor(Math.random() * 4))
+        this.secuence = new Array(LAST_LEVEL).fill(0).map(n => Math.floor(Math.random() * 4))
     }
 
+    // Initializes a new level
     nextLevel() {
+        this.levelUp = 0
         this.lightUpSecuence()
         this.addClickEvents()
     }
@@ -44,15 +58,28 @@ class Game {
     transformNumberToColor(number) {
         switch (number) {
             case 0:
-            return 'lightBlue'
+                return 'lightBlue'
             case 1:
-            return 'violet'
+                return 'violet'
             case 2:
-            return 'orange'
+                return 'orange'
             case 3:
-            return 'green'
+                return 'green'
         }
     }
+
+    transformColorToNumber(color) {
+        switch (color) {
+            case 'lightBlue':
+                return 0
+            case 'violet':
+                return 1
+            case 'orange':
+                return 2
+            case 'green':
+                return 3
+        }
+      }
 
     // Method which lights up the buttons according with the secuence generated
     lightUpSecuence() {
@@ -78,13 +105,50 @@ class Game {
         this.colors.orange.addEventListener('click', this.choiceColor)
     }
 
+    removeClickEvents() {
+        this.colors.lightBlue.removeEventListener('click', this.choiceColor)
+        this.colors.green.removeEventListener('click', this.choiceColor)
+        this.colors.violet.removeEventListener('click', this.choiceColor)
+        this.colors.orange.removeEventListener('click', this.choiceColor)
+    }
+
+    // Method executed when the player choices a color for its validation
     choiceColor(ev) {
-        console.log(this)
+        const colorName = ev.target.dataset.color
+        const colorNumber = this.transformColorToNumber(colorName)
+        this.lightUpColor(colorName)
+        if (colorNumber === this.secuence[this.levelUp]) {
+            this.levelUp++
+            if (this.levelUp === this.level) {
+                this.level++
+                this.removeClickEvents()
+                if (this.level === (LAST_LEVEL + 1)) {
+                    this.wonGame()
+                } else {
+                    setTimeout(this.nextLevel, 1500)
+                }
+            }
+        } else {
+            this.lostGame()
+        }
+    }
+
+    wonGame() {
+        swal('Simon Says', 'Congratulations, you won the game!', 'success')
+            .then(this.initialize)
+    }
+
+    lostGame() {
+        swal('Simon Says', 'Sorry, you lost :(', 'error')
+            .then(() => {
+                this.removeClickEvents()
+                this.initialize()
+            })
     }
 
 }
 
 // global function to start the game
 function startGame() {
-    var game = new Game()
+    window.game = new Game()
 }
